@@ -43,14 +43,13 @@ class DocumentadorListener(Python3Listener):
         print(root.name_node)
         self.imprimir_hijos(root, 1)
 
-    def imprimir_hijos(self, nodo:StackNode, level):
+    def imprimir_hijos(self, nodo: StackNode, level):
         print("level", level)
         for child in nodo.child:
             print(child.name_node, child.stack_node_type)
         for child in nodo.child:
             if len(child.child) > 0:
                 self.imprimir_hijos(child, level + 1)
-
 
     # Enter a parse tree produced by Python3Parser#single_input.
     def enterSingle_input(self, ctx: Python3Parser.Single_inputContext):
@@ -66,7 +65,7 @@ class DocumentadorListener(Python3Listener):
 
     # Exit a parse tree produced by Python3Parser#file_input.
     def exitFile_input(self, ctx: Python3Parser.File_inputContext):
-        #print(self.pila[-1])
+        # print(self.pila[-1])
         pass
 
     # Enter a parse tree produced by Python3Parser#eval_input.
@@ -114,9 +113,9 @@ class DocumentadorListener(Python3Listener):
         """
         Nombres de las funciones definidas.
         """
-        self.func_def = str(ctx.NAME())
-        self.func.append(self.func_def)
-        stack_node = StackNode(self.func_def, "function")
+        func_def = str(ctx.NAME())
+        self.func.append(func_def)
+        stack_node = StackNode(func_def, "function")
         self.pila[-1].child.append(stack_node)
         self.pila.append(stack_node)
         self.dicc[stack_node.node_id] = stack_node
@@ -140,7 +139,7 @@ class DocumentadorListener(Python3Listener):
         """
         Lista con los argumentos de las funciones (si existen).
         """
-        #print("enterTypedargslist: [{}]".format(str(ctx.getText())))
+        # print("enterTypedargslist: [{}]".format(str(ctx.getText())))
         pass
 
     # Exit a parse tree produced by Python3Parser#typedargslist.
@@ -152,7 +151,7 @@ class DocumentadorListener(Python3Listener):
         """
         Argumentos de las funciones (si existen).
         """
-        #print("enterTfpdef: ", str(ctx.NAME()))
+        # print("enterTfpdef: ", str(ctx.NAME()))
         pass
 
     # Exit a parse tree produced by Python3Parser#tfpdef.
@@ -209,7 +208,7 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#annassign.
     def enterAnnassign(self, ctx: Python3Parser.AnnassignContext):
-        #print("enterAnnassign: ", str(ctx.test()), "en", self.pila[-1])
+        # print("enterAnnassign: ", ctx.getText())
         pass
 
     # Exit a parse tree produced by Python3Parser#annassign.
@@ -250,7 +249,7 @@ class DocumentadorListener(Python3Listener):
         self.pila[-1].child.append(stack_node)
         self.pila.append(stack_node)
         self.dicc[stack_node.node_id] = stack_node
-        #print("enterPass_stmt: ", stack_node)
+        # print("enterPass_stmt: ", stack_node)
         pass
 
     # Exit a parse tree produced by Python3Parser#pass_stmt.
@@ -418,7 +417,7 @@ class DocumentadorListener(Python3Listener):
         self.pila[-1].child.append(stack_node)
         self.pila.append(stack_node)
         self.dicc[stack_node.node_id] = stack_node
-        #print("if_stmt: ", str(ctx.getText()))
+        # print("if_stmt: ", str(ctx.getText()))
 
     # Exit a parse tree produced by Python3Parser#if_stmt.
     def exitIf_stmt(self, ctx: Python3Parser.If_stmtContext):
@@ -652,18 +651,19 @@ class DocumentadorListener(Python3Listener):
         """
         Expresiones atómicas.
         """
-        self.atom = str(ctx.NAME())
-        stack_node = StackNode(self.atom, "atom expr")
-        #self.pila.append(stack_node)
+        # self.atom = str(ctx.NAME())
+        # stack_node = StackNode(self.atom, "atom expr")
+        # self.pila.append(stack_node)
         pass
 
     # Exit a parse tree produced by Python3Parser#atom.
     def exitAtom(self, ctx: Python3Parser.AtomContext):
-        #self.pila.pop()
+        # self.pila.pop()
         pass
 
     # Enter a parse tree produced by Python3Parser#testlist_comp.
     def enterTestlist_comp(self, ctx: Python3Parser.Testlist_compContext):
+        # print("trailer_com: ", ctx.getText())
         pass
 
     # Exit a parse tree produced by Python3Parser#testlist_comp.
@@ -672,7 +672,7 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#trailer.
     def enterTrailer(self, ctx: Python3Parser.TrailerContext):
-        #print("enterTrailer: ", str(ctx.getText()))
+        # print("enterTrailer: ", ctx.getText())
         pass
 
     # Exit a parse tree produced by Python3Parser#trailer.
@@ -749,7 +749,7 @@ class DocumentadorListener(Python3Listener):
         """
         Lista con los argumentos de llamados de funciones.
         """
-        #print("enterArglist: [{}]".format(str(ctx.getText())))
+        # print("enterArglist: [{}]".format(str(ctx.getText())))
         pass
 
     # Exit a parse tree produced by Python3Parser#arglist.
@@ -761,7 +761,7 @@ class DocumentadorListener(Python3Listener):
         """
         Argumentos de llamados de funciones.
         """
-        #print("enterArgument: ", str(ctx.getText()))
+        # print("enterArgument: ", str(ctx.getText()))
         pass
 
     # Exit a parse tree produced by Python3Parser#argument.
