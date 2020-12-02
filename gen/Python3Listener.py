@@ -1,4 +1,4 @@
-# Generated from C:/Users/Teletrabajo/PycharmProjects/ProyectoFinal_TALP\Python3.g4 by ANTLR 4.8
+# Generated from /home/joan/PycharmProjects/ProyectoFinal_TALP/Python3.g4 by ANTLR 4.8
 from antlr4 import *
 if __name__ is not None and "." in __name__:
     from .Python3Parser import Python3Parser
@@ -383,6 +383,24 @@ class Python3Listener(ParseTreeListener):
 
     # Exit a parse tree produced by Python3Parser#if_stmt.
     def exitIf_stmt(self, ctx:Python3Parser.If_stmtContext):
+        pass
+
+
+    # Enter a parse tree produced by Python3Parser#elif_stmt.
+    def enterElif_stmt(self, ctx:Python3Parser.Elif_stmtContext):
+        pass
+
+    # Exit a parse tree produced by Python3Parser#elif_stmt.
+    def exitElif_stmt(self, ctx:Python3Parser.Elif_stmtContext):
+        pass
+
+
+    # Enter a parse tree produced by Python3Parser#else_stmt.
+    def enterElse_stmt(self, ctx:Python3Parser.Else_stmtContext):
+        pass
+
+    # Exit a parse tree produced by Python3Parser#else_stmt.
+    def exitElse_stmt(self, ctx:Python3Parser.Else_stmtContext):
         pass
 
 

@@ -1,4 +1,4 @@
-# Generated from C:/Users/Teletrabajo/PycharmProjects/ProyectoFinal_TALP\Python3.g4 by ANTLR 4.8
+# Generated from /home/joan/PycharmProjects/ProyectoFinal_TALP/Python3.g4 by ANTLR 4.8
 from antlr4 import *
 if __name__ is not None and "." in __name__:
     from .Python3Parser import Python3Parser
@@ -216,6 +216,16 @@ class Python3Visitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by Python3Parser#if_stmt.
     def visitIf_stmt(self, ctx:Python3Parser.If_stmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by Python3Parser#elif_stmt.
+    def visitElif_stmt(self, ctx:Python3Parser.Elif_stmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by Python3Parser#else_stmt.
+    def visitElse_stmt(self, ctx:Python3Parser.Else_stmtContext):
         return self.visitChildren(ctx)
 
 

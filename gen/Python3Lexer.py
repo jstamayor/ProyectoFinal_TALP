@@ -1,4 +1,4 @@
-# Generated from C:/Users/Teletrabajo/PycharmProjects/ProyectoFinal_TALP\Python3.g4 by ANTLR 4.8
+# Generated from /home/joan/PycharmProjects/ProyectoFinal_TALP/Python3.g4 by ANTLR 4.8
 from antlr4 import *
 from io import StringIO
 from typing.io import TextIO
