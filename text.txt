@@ -29,5 +29,12 @@ class Calculadora:
         self.prod = a * b
         return self.prod
 
+    def op_div(self, a, b):
+        if b != 0:
+            self.div = a/b
+            return self.div
+        else:
+            pass
+
 if __name__ == '__main__':
     calc = Calculadora()

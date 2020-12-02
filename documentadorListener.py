@@ -18,6 +18,7 @@ class StackNode:
         self.child = []
         self.variables = {}
         self.del_expr = 0
+        self.pass_stmt = 0
         self.stack_node_type = stack_node_type
 
     def __str__(self):
@@ -54,9 +55,14 @@ class DocumentadorListener(Python3Listener):
         if len(nodo.variables.keys()) > 0:
             self.print_tabs(level)
             print("[Asignaciones]: {}".format(len(nodo.variables.keys())))
+
         if nodo.del_expr > 0:
             self.print_tabs(level)
-            print("[Del]: {}".format(nodo.del_expr))
+            print("[del]: {}".format(nodo.del_expr))
+
+        if nodo.pass_stmt > 0:
+            self.print_tabs(level)
+            print("[pass]: {}".format(nodo.pass_stmt))
 
         def check_nodo_type(prev, cur):
             if cur.stack_node_type == "conditional" or cur.stack_node_type == "loop":
@@ -282,6 +288,8 @@ class DocumentadorListener(Python3Listener):
         """
         Palabra reservada pass.
         """
+        current = self.pila[-1]
+        current.pass_stmt += 1
         self.pass_stmt = str(ctx.getText())
         stack_node = StackNode(self.pass_stmt, "keyword")
         self.pila[-1].child.append(stack_node)
