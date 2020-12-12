@@ -1,10 +1,32 @@
-class Calculadora:
+import re
+from re import re as re
+
+class AdvancedCalculator:
+
+    def __init__(self):
+        pass
+
+    def sin(self, x):
+        while True:
+            break
+
+    def cos(self, x):
+        pass
+
+    def tan(self, x):
+        pass
+
+class BasicCalculator:
 
     d = {'key1': "value1"}
     l = [1]
     t = (x, y)
 
+    if d:
+        pass
+
     def __init__(self):
+        global a, b, c
         for i in range(5):
             a = i
             print(a)
@@ -13,6 +35,10 @@ class Calculadora:
         while True:
             b = 1
             print(b)
+            break
+
+        for i in range(5):
+            continue
 
         if True:
             pass
@@ -23,7 +49,7 @@ class Calculadora:
 
     def op_add(self, a, b):
         self.sum = a + b
-        return self.sum
+        yield self.sum
 
     def op_mul(self, a, b):
         self.prod = a * b
@@ -34,7 +60,11 @@ class Calculadora:
             self.div = a/b
             return self.div
         else:
+            raise Exception("Sorry, no numbers below zero")
             pass
+
+    def op_mod(self, a, b):
+        pass
 
 if __name__ == '__main__':
     calc = Calculadora()

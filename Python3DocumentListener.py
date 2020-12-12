@@ -1,8 +1,9 @@
 from antlr4 import *
-import uuid
 import functools
+import uuid
 
 from gen.Python3Listener import Python3Listener
+from graphviz import Digraph
 
 if __name__ is not None and "." in __name__:
     from .gen.Python3Parser import Python3Parser
@@ -16,9 +17,16 @@ class StackNode:
         self.name_node = name_node
         self.node_id = str(uuid.uuid4())
         self.child = []
+        self.import_stmt = {}
         self.variables = {}
-        self.del_expr = 0
+        self.del_stmt = 0
         self.pass_stmt = 0
+        self.break_stmt = 0
+        self.continue_stmt = 0
+        self.return_stmt = 0
+        self.yield_stmt = 0
+        self.raise_stmt = 0
+        self.global_stmt = 0
         self.stack_node_type = stack_node_type
 
     def __str__(self):
@@ -31,19 +39,21 @@ class StackNode:
 
 
 # This class defines a complete listener for a parse tree produced by Python3Parser.
-class DocumentadorListener(Python3Listener):
+class DocumentListener(Python3Listener):
 
     def __init__(self):
-        stack_node = StackNode("script", "main")
+        stack_node = StackNode("Script", "Main")
+        self.graph = Digraph(comment="Graph for this script.")
         self.dicc = {}
         self.func = []
         self.pila = [stack_node]
         super().__init__()
 
+    def graph_render(self):
+        self.graph.render('graph-script.gv', view=True)
+
     def imprimir(self):
         root = self.pila[-1]
-        #print("level 0")
-        #print(root.name_node)
         self.imprimir_nodo(root, 0)
 
     def print_tabs(self, level):
@@ -54,18 +64,42 @@ class DocumentadorListener(Python3Listener):
     def print_node_data(self, nodo, level):
         if len(nodo.variables.keys()) > 0:
             self.print_tabs(level)
-            print("[Asignaciones]: {}".format(len(nodo.variables.keys())))
+            print("[assignments]: {}".format(len(nodo.variables.keys())))
 
-        if nodo.del_expr > 0:
+        if nodo.del_stmt > 0:
             self.print_tabs(level)
-            print("[del]: {}".format(nodo.del_expr))
+            print("[del]: {}".format(nodo.del_stmt))
 
         if nodo.pass_stmt > 0:
             self.print_tabs(level)
             print("[pass]: {}".format(nodo.pass_stmt))
 
+        if nodo.break_stmt > 0:
+            self.print_tabs(level)
+            print("[break]: {}".format(nodo.break_stmt))
+
+        if nodo.continue_stmt > 0:
+            self.print_tabs(level)
+            print("[continue]: {}".format(nodo.continue_stmt))
+
+        if nodo.return_stmt > 0:
+            self.print_tabs(level)
+            print("[return]: {}".format(nodo.return_stmt))
+
+        if nodo.yield_stmt > 0:
+            self.print_tabs(level)
+            print("[yield]: {}".format(nodo.yield_stmt))
+
+        if nodo.raise_stmt > 0:
+            self.print_tabs(level)
+            print("[raise]: {}".format(nodo.raise_stmt))
+
+        if nodo.global_stmt > 0:
+            self.print_tabs(level)
+            print("[global]: {}".format(nodo.global_stmt))
+
         def check_nodo_type(prev, cur):
-            if cur.stack_node_type == "conditional" or cur.stack_node_type == "loop":
+            if cur.stack_node_type == "Conditional" or cur.stack_node_type == "Loop":
                 prev[cur.name_node] = prev.get(cur.name_node, 0) + 1
             return prev
 
@@ -76,14 +110,22 @@ class DocumentadorListener(Python3Listener):
             print("[{}]: {}".format(item, count))
 
     def imprimir_nodo(self, nodo: StackNode, level):
+        if nodo.stack_node_type in ["Main"]:
+            self.graph.node(nodo.node_id + nodo.name_node, nodo.name_node, _attributes={'color': 'lightblue2', 'style': 'filled'})
+        elif nodo.stack_node_type in ["Class"]:
+            self.graph.node(nodo.node_id + nodo.name_node, nodo.name_node, _attributes={'color': 'darkorange', 'style': 'filled'})
+        elif nodo.stack_node_type in ["Constructor"]:
+            self.graph.node(nodo.node_id + nodo.name_node, nodo.name_node, _attributes={'color': 'fuchsia', 'style': 'filled'})
+        elif nodo.stack_node_type in ["Function", "Conditional", "Loop", "Keyword"]:
+            self.graph.node(nodo.node_id + nodo.name_node, nodo.name_node)
+
         self.print_tabs(level)
-        print("level", level)
+        print("Level", level)
         self.print_tabs(level)
         print(nodo.name_node, nodo.stack_node_type)
         self.print_node_data(nodo, level)
 
         for child in nodo.child:
-            #self.print_tabs(level)
             if len(child.child) > 0:
                 print()
                 self.imprimir_nodo(child, level + 1)
@@ -147,12 +189,14 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#funcdef.
     def enterFuncdef(self, ctx: Python3Parser.FuncdefContext):
-        """
-        Nombres de las funciones definidas.
-        """
         func_def = str(ctx.NAME())
         self.func.append(func_def)
-        stack_node = StackNode(func_def, "function")
+        if func_def == "__init__":
+            stack_node = StackNode(func_def, "Constructor")
+            self.graph.edge(self.pila[-1].node_id + self.pila[-1].name_node, stack_node.node_id + func_def, constraint='true')
+        else:
+            stack_node = StackNode(func_def, "Function")
+            self.graph.edge(self.pila[-1].node_id + self.pila[-1].name_node, stack_node.node_id + func_def, constraint='true')
         self.pila[-1].child.append(stack_node)
         self.pila.append(stack_node)
         self.dicc[stack_node.node_id] = stack_node
@@ -173,10 +217,6 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#typedargslist.
     def enterTypedargslist(self, ctx: Python3Parser.TypedargslistContext):
-        """
-        Lista con los argumentos de las funciones (si existen).
-        """
-        # print("enterTypedargslist: [{}]".format(str(ctx.getText())))
         pass
 
     # Exit a parse tree produced by Python3Parser#typedargslist.
@@ -185,10 +225,6 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#tfpdef.
     def enterTfpdef(self, ctx: Python3Parser.TfpdefContext):
-        """
-        Argumentos de las funciones (si existen).
-        """
-        # print("enterTfpdef: ", str(ctx.NAME()))
         pass
 
     # Exit a parse tree produced by Python3Parser#tfpdef.
@@ -237,7 +273,6 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#expr_stmt.
     def enterExpr_stmt(self, ctx: Python3Parser.Expr_stmtContext):
-        #print("expr_stmt: ", ctx.getText())
         x = ctx.getText().split("=")
         if len(x) > 1:
             current_node = self.pila[-1]
@@ -250,7 +285,6 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#annassign.
     def enterAnnassign(self, ctx: Python3Parser.AnnassignContext):
-        # print("enterAnnassign: ", ctx.getText())
         pass
 
     # Exit a parse tree produced by Python3Parser#annassign.
@@ -276,7 +310,9 @@ class DocumentadorListener(Python3Listener):
     # Enter a parse tree produced by Python3Parser#del_stmt.
     def enterDel_stmt(self, ctx: Python3Parser.Del_stmtContext):
         current = self.pila[-1]
-        current.del_expr += 1
+        current.del_stmt += 1
+        stack_node = StackNode("del", "Keyword")
+        self.pila[-1].child.append(stack_node)
         pass
 
     # Exit a parse tree produced by Python3Parser#del_stmt.
@@ -285,17 +321,12 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#pass_stmt.
     def enterPass_stmt(self, ctx: Python3Parser.Pass_stmtContext):
-        """
-        Palabra reservada pass.
-        """
         current = self.pila[-1]
         current.pass_stmt += 1
-        self.pass_stmt = str(ctx.getText())
-        stack_node = StackNode(self.pass_stmt, "keyword")
+        stack_node = StackNode("pass", "Keyword")
         self.pila[-1].child.append(stack_node)
         self.pila.append(stack_node)
         self.dicc[stack_node.node_id] = stack_node
-        # print("enterPass_stmt: ", stack_node)
         pass
 
     # Exit a parse tree produced by Python3Parser#pass_stmt.
@@ -313,6 +344,10 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#break_stmt.
     def enterBreak_stmt(self, ctx: Python3Parser.Break_stmtContext):
+        current = self.pila[-1]
+        current.break_stmt += 1
+        stack_node = StackNode("break", "Keyword")
+        self.pila[-1].child.append(stack_node)
         pass
 
     # Exit a parse tree produced by Python3Parser#break_stmt.
@@ -321,6 +356,10 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#continue_stmt.
     def enterContinue_stmt(self, ctx: Python3Parser.Continue_stmtContext):
+        current = self.pila[-1]
+        current.continue_stmt += 1
+        stack_node = StackNode("continue", "Keyword")
+        self.pila[-1].child.append(stack_node)
         pass
 
     # Exit a parse tree produced by Python3Parser#continue_stmt.
@@ -329,7 +368,9 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#return_stmt.
     def enterReturn_stmt(self, ctx: Python3Parser.Return_stmtContext):
-        stack_node = StackNode("return", "keyword")
+        current = self.pila[-1]
+        current.return_stmt += 1
+        stack_node = StackNode("return", "Keyword")
         self.pila[-1].child.append(stack_node)
         pass
 
@@ -339,6 +380,10 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#yield_stmt.
     def enterYield_stmt(self, ctx: Python3Parser.Yield_stmtContext):
+        current = self.pila[-1]
+        current.yield_stmt += 1
+        stack_node = StackNode("yield", "Keyword")
+        self.pila[-1].child.append(stack_node)
         pass
 
     # Exit a parse tree produced by Python3Parser#yield_stmt.
@@ -347,6 +392,10 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#raise_stmt.
     def enterRaise_stmt(self, ctx: Python3Parser.Raise_stmtContext):
+        current = self.pila[-1]
+        current.raise_stmt += 1
+        stack_node = StackNode("raise", "Keyword")
+        self.pila[-1].child.append(stack_node)
         pass
 
     # Exit a parse tree produced by Python3Parser#raise_stmt.
@@ -355,6 +404,9 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#import_stmt.
     def enterImport_stmt(self, ctx: Python3Parser.Import_stmtContext):
+        print(ctx.getText())
+        current_node = self.pila[-1]
+        current_node.import_stmt[ctx.getText()] = current_node.import_stmt.get(ctx.getText(), 0)
         pass
 
     # Exit a parse tree produced by Python3Parser#import_stmt.
@@ -419,6 +471,9 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#global_stmt.
     def enterGlobal_stmt(self, ctx: Python3Parser.Global_stmtContext):
+        global_var = ctx.getText().split("global")[1].split(",")
+        current = self.pila[-1]
+        current.global_stmt += len(global_var)
         pass
 
     # Exit a parse tree produced by Python3Parser#global_stmt.
@@ -459,11 +514,11 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#if_stmt.
     def enterIf_stmt(self, ctx: Python3Parser.If_stmtContext):
-        stack_node = StackNode("if", "conditional")
+        stack_node = StackNode("if", "Conditional")
+        self.graph.edge(self.pila[-1].node_id + self.pila[-1].name_node, stack_node.node_id + stack_node.name_node, constraint='true')
         self.pila[-1].child.append(stack_node)
         self.pila.append(stack_node)
         self.dicc[stack_node.node_id] = stack_node
-        # print("if_stmt: ", str(ctx.getText()))
 
     # Exit a parse tree produced by Python3Parser#if_stmt.
     def exitIf_stmt(self, ctx: Python3Parser.If_stmtContext):
@@ -472,7 +527,8 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#elif_stmt.
     def enterElif_stmt(self, ctx: Python3Parser.Elif_stmtContext):
-        stack_node = StackNode("elif", "conditional")
+        stack_node = StackNode("elif", "Conditional")
+        self.graph.edge(self.pila[-1].node_id + self.pila[-1].name_node, stack_node.node_id + stack_node.name_node, constraint='true')
         self.pila[-1].child.append(stack_node)
         self.pila.append(stack_node)
         self.dicc[stack_node.node_id] = stack_node
@@ -485,7 +541,8 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#else_stmt.
     def enterElse_stmt(self, ctx: Python3Parser.Else_stmtContext):
-        stack_node = StackNode("else", "conditional")
+        stack_node = StackNode("else", "Conditional")
+        self.graph.edge(self.pila[-1].node_id + self.pila[-1].name_node, stack_node.node_id + stack_node.name_node, constraint='true')
         self.pila[-1].child.append(stack_node)
         self.pila.append(stack_node)
         self.dicc[stack_node.node_id] = stack_node
@@ -498,7 +555,8 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#while_stmt.
     def enterWhile_stmt(self, ctx: Python3Parser.While_stmtContext):
-        stack_node = StackNode("while", "loop")
+        stack_node = StackNode("while", "Loop")
+        self.graph.edge(self.pila[-1].node_id + self.pila[-1].name_node, stack_node.node_id + stack_node.name_node, constraint='true')
         self.pila[-1].child.append(stack_node)
         self.pila.append(stack_node)
         self.dicc[stack_node.node_id] = stack_node
@@ -511,7 +569,8 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#for_stmt.
     def enterFor_stmt(self, ctx: Python3Parser.For_stmtContext):
-        stack_node = StackNode("for", "loop")
+        stack_node = StackNode("for", "Loop")
+        self.graph.edge(self.pila[-1].node_id + self.pila[-1].name_node, stack_node.node_id + stack_node.name_node, constraint='true')
         self.pila[-1].child.append(stack_node)
         self.pila.append(stack_node)
         self.dicc[stack_node.node_id] = stack_node
@@ -708,11 +767,6 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#atom_expr.
     def enterAtom_expr(self, ctx: Python3Parser.Atom_exprContext):
-        # print("atom_expr: ", str(ctx.getText()))
-        if len(str(ctx.getText()).split('(')) > 1:
-            func_name = str(ctx.getText()).split('(')[0]
-            stack_node = StackNode(func_name, "call function")
-            self.pila[-1].child.append(stack_node)
         pass
 
     # Exit a parse tree produced by Python3Parser#atom_expr.
@@ -721,17 +775,10 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#atom.
     def enterAtom(self, ctx: Python3Parser.AtomContext):
-        """
-        Expresiones atómicas.
-        """
-        # self.atom = str(ctx.NAME())
-        # stack_node = StackNode(self.atom, "atom expr")
-        # self.pila.append(stack_node)
         pass
 
     # Exit a parse tree produced by Python3Parser#atom.
     def exitAtom(self, ctx: Python3Parser.AtomContext):
-        # self.pila.pop()
         pass
 
     # Enter a parse tree produced by Python3Parser#testlist_comp.
@@ -745,7 +792,6 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#trailer.
     def enterTrailer(self, ctx: Python3Parser.TrailerContext):
-        # print("enterTrailer: ", ctx.getText())
         pass
 
     # Exit a parse tree produced by Python3Parser#trailer.
@@ -802,11 +848,9 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#classdef.
     def enterClassdef(self, ctx: Python3Parser.ClassdefContext):
-        """
-        Nombre de las clases definidas.
-        """
-        self.class_def = str(ctx.NAME())
-        stack_node = StackNode(self.class_def, "class")
+        class_def = str(ctx.NAME())
+        stack_node = StackNode(class_def, "Class")
+        self.graph.edge(self.pila[-1].node_id + self.pila[-1].name_node, stack_node.node_id + stack_node.name_node)
         self.pila[-1].child.append(stack_node)
         self.pila.append(stack_node)
         self.dicc[stack_node.node_id] = stack_node
@@ -819,10 +863,6 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#arglist.
     def enterArglist(self, ctx: Python3Parser.ArglistContext):
-        """
-        Lista con los argumentos de llamados de funciones.
-        """
-        # print("enterArglist: [{}]".format(str(ctx.getText())))
         pass
 
     # Exit a parse tree produced by Python3Parser#arglist.
@@ -831,10 +871,6 @@ class DocumentadorListener(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#argument.
     def enterArgument(self, ctx: Python3Parser.ArgumentContext):
-        """
-        Argumentos de llamados de funciones.
-        """
-        # print("enterArgument: ", str(ctx.getText()))
         pass
 
     # Exit a parse tree produced by Python3Parser#argument.

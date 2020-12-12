@@ -1,7 +1,7 @@
 import sys
 from antlr4 import *
 
-from documentadorListener import DocumentadorListener
+from Python3DocumentListener import DocumentListener
 from gen.Python3Lexer import Python3Lexer
 from gen.Python3Parser import Python3Parser
 
@@ -12,10 +12,11 @@ def main(argv):
     stream = CommonTokenStream(lexer)
     parser = Python3Parser(stream)
     tree = parser.file_input()
-    listener = DocumentadorListener()
+    listener = DocumentListener()
     walker = ParseTreeWalker()
     walker.walk(listener, tree)
     listener.imprimir()
+    listener.graph_render()
 
 
 if __name__ == '__main__':
